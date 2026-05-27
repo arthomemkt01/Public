@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArtHome - Lead Management</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f4f8;color:#2d3748;min-height:100vh}
+  :root{--primary:#1a56db;--primary-light:#ebf2ff;--success:#0e9f6e;--warning:#ff8800;--danger:#e02424;--gray:#6b7280;--border:#e2e8f0;--card:#fff;--high:#7c3aed;--medium:#0e9f6e;--low:#f59e0b;--spam:#e02424}
+  /* NAV */
+  .topbar{background:linear-gradient(135deg,#1a56db,#1e429f);padding:0 20px;display:flex;align-items:center;gap:12px;height:56px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+  .topbar .logo{color:#fff;font-size:20px;font-weight:700;letter-spacing:.5px}
+  .topbar .logo span{color:#93c5fd}
+  nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  nav button{background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;transition:.2s;white-space:nowrap}
+  nav button:hover,nav button.active{background:rgba(255,255,255,.3);font-weight:600}
+  /* MAIN */
+  main{padding:20px;max-width:1400px;margin:0 auto}
+  .page{display:none}.page.active{display:block}
+  /* STATS ROW */
+  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px}
+  .stat-card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid var(--primary)}
+  .stat-card.high{border-color:var(--high)}.stat-card.medium{border-color:var(--medium)}.stat-card.low{border-color:var(--low)}.stat-card.spam{border-color:var(--spam)}
+  .stat-num{font-size:28px;font-weight:700;line-height:1}.stat-label{font-size:12px;color:var(--gray);margin-top:4px}.stat-pct{font-size:11px;color:var(--gray);margin-top:2px}
+  /* TOOLBAR */
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+  .toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;outline:none}
+  .toolbar input:focus,.toolbar select:focus{border-color:var(--primary)}
+  .toolbar input{flex:1;min-width:200px}
+  /* BUTTONS */
+  .btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#1e429f}
+  .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#c81e1e}
+  .btn-sm{padding:4px 10px;font-size:12px}
+  .btn-edit{background:#e0f2fe;color:#0369a1}.btn-edit:hover{background:#bae6fd}
+  /* TABLE */
+  .table-wrap{background:var(--card);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  thead th{background:#f8fafc;padding:12px 10px;text-align:left;font-weight:600;color:var(--gray);border-bottom:2px solid var(--border);white-space:nowrap}
+  tbody tr{border-bottom:1px solid var(--border);transition:.15s}
+  tbody tr:hover{background:#f8faff}
+  tbody td{padding:10px;vertical-align:middle}
+  /* BADGE */
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+  .badge-high{background:#ede9fe;color:#6d28d9}
+  .badge-medium{background:#d1fae5;color:#065f46}
+  .badge-low{background:#fef3c7;color:#92400e}
+  .badge-spam{background:#fee2e2;color:#991b1b}
+  .badge-zone{background:#e0f2fe;color:#075985;font-size:11px}
+  /* MODAL */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+  .overlay.open{display:flex}
+  .modal{background:#fff;border-radius:16px;padding:24px;width:90%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .modal h3{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--primary)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-group{display:flex;flex-direction:column;gap:4px}
+  .form-group.full{grid-column:1/-1}
+  .form-group label{font-size:12px;font-weight:600;color:var(--gray)}
+  .form-group input,.form-group select,.form-group textarea{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;font-family:inherit}
+  .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary)}
+  .form-group textarea{resize:vertical;min-height:70px}
+  .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+  /* CHART */
+  .chart-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+  .chart-card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .chart-card h4{font-size:14px;font-weight:600;color:var(--gray);margin-bottom:16px}
+  .bar-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+  .bar-item .bar-label{width:110px;text-align:right;font-size:12px;flex-shrink:0}
+  .bar-track{flex:1;background:#f1f5f9;border-radius:20px;height:20px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:20px;transition:.5s}
+  .bar-item .bar-val{width:30px;font-weight:600;font-size:12px}
+  /* MONTH TABLE */
+  .month-table{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .month-table h4{font-size:14px;font-weight:600;color:var(--gray);margin-bottom:16px}
+  /* EMPTY */
+  .empty{text-align:center;padding:40px;color:var(--gray);font-size:14px}
+  /* PAGE TITLE */
+  .page-title{font-size:20px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  /* Confirm */
+  #confirmModal .modal{max-width:360px;text-align:center}
+  #confirmModal p{margin-bottom:20px;font-size:14px;color:#4b5563}
+  @media(max-width:600px){.form-grid{grid-template-columns:1fr}nav button{font-size:11px;padding:6px 10px}.topbar .logo{font-size:16px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">🏠 Art<span>Home</span></div>
+  <nav id="nav">
+    <button class="active" onclick="showPage('all',this)">📋 Leads ทั้งหมด</button>
+    <button onclick="showPage('dash',this)">📊 Dashboard</button>
+    <button onclick="showPage('monthly',this)">📅 รายเดือน</button>
+    <button onclick="showPage('east',this)">🏠 ตะวันออก</button>
+    <button onclick="showPage('central',this)">🏠 ภาคกลาง</button>
+    <button onclick="showPage('nakhon',this)">🏠 นครสวรรค์</button>
+  </nav>
+</div>
+
+<main>
+  <!-- ALL LEADS -->
+  <div id="page-all" class="page active">
+    <div class="page-title">📋 Leads ทั้งหมด</div>
+    <div class="stats-row" id="stats-all"></div>
+    <div class="toolbar">
+      <input id="search-all" type="text" placeholder="🔍 ค้นหาชื่อ, เบอร์, Line ID...">
+      <select id="filter-status"><option value="">สถานะทั้งหมด</option><option>คุณภาพสูง</option><option>มีคุณภาพ</option><option>ยังไม่มีคุณภาพ</option><option>แสปม</option></select>
+      <select id="filter-zone"><option value="">ภาคทั้งหมด</option><option>ภาคตะวันออก</option><option>ภาคกลาง</option><option>นครสวรรค์</option></select>
+      <button class="btn btn-primary" onclick="openAdd()">+ เพิ่ม Lead</button>
+    </div>
+    <div class="table-wrap"><table id="table-all"><thead><tr><th>#</th><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>Line ID</th><th>โครงการ</th><th>ภาค</th><th>งบประมาณ</th><th>สถานะ</th><th>วันที่</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody id="tbody-all"></tbody></table></div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="page-dash" class="page">
+    <div class="page-title">📊 Dashboard</div>
+    <div class="stats-row" id="stats-dash"></div>
+    <div class="chart-section">
+      <div class="chart-card"><h4>📊 สถานะ Leads</h4><div id="chart-status"></div></div>
+      <div class="chart-card"><h4>🗺️ Leads ตามภาค</h4><div id="chart-zone"></div></div>
+      <div class="chart-card"><h4>📅 Leads รายเดือน (ล่าสุด 6 เดือน)</h4><div id="chart-monthly"></div></div>
+      <div class="chart-card"><h4>📱 แหล่งที่มา</h4><div id="chart-source"></div></div>
+    </div>
+  </div>
+
+  <!-- MONTHLY -->
+  <div id="page-monthly" class="page">
+    <div class="page-title">📅 สรุปรายเดือน</div>
+    <div class="month-table" id="monthly-content"></div>
+  </div>
+
+  <!-- EAST -->
+  <div id="page-east" class="page">
+    <div class="page-title">🏠 ภาคตะวันออก</div>
+    <div class="stats-row" id="stats-east"></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>Line ID</th><th>โครงการ</th><th>งบประมาณ</th><th>สถานะ</th><th>วันที่</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody id="tbody-east"></tbody></table></div>
+  </div>
+
+  <!-- CENTRAL -->
+  <div id="page-central" class="page">
+    <div class="page-title">🏠 ภาคกลาง</div>
+    <div class="stats-row" id="stats-central"></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>Line ID</th><th>โครงการ</th><th>งบประมาณ</th><th>สถานะ</th><th>วันที่</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody id="tbody-central"></tbody></table></div>
+  </div>
+
+  <!-- NAKHON -->
+  <div id="page-nakhon" class="page">
+    <div class="page-title">🏠 นครสวรรค์</div>
+    <div class="stats-row" id="stats-nakhon"></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>ชื่อ-นามสกุล</th><th>เบอร์โทร</th><th>Line ID</th><th>โครงการ</th><th>งบประมาณ</th><th>สถานะ</th><th>วันที่</th><th>หมายเหตุ</th><th>จัดการ</th></tr></thead><tbody id="tbody-nakhon"></tbody></table></div>
+  </div>
+</main>
+
+<!-- ADD/EDIT MODAL -->
+<div class="overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">➕ เพิ่ม Lead ใหม่</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>ชื่อ-นามสกุล *</label><input id="f-name" placeholder="ชื่อ นามสกุล"></div>
+      <div class="form-group"><label>เบอร์โทร *</label><input id="f-phone" placeholder="08x-xxx-xxxx"></div>
+      <div class="form-group"><label>Line ID</label><input id="f-line" placeholder="@lineid"></div>
+      <div class="form-group"><label>แหล่งที่มา</label>
+        <select id="f-source"><option>Facebook</option><option>Line</option><option>Website</option><option>โทรเข้ามาเอง</option><option>Referral</option><option>TikTok</option><option>อื่นๆ</option></select>
+      </div>
+      <div class="form-group"><label>โครงการที่สนใจ</label><input id="f-project" placeholder="ชื่อโครงการ"></div>
+      <div class="form-group"><label>ภาค *</label>
+        <select id="f-zone"><option>ภาคตะวันออก</option><option>ภาคกลาง</option><option>นครสวรรค์</option></select>
+      </div>
+      <div class="form-group"><label>งบประมาณ</label><input id="f-budget" placeholder="เช่น 2,000,000"></div>
+      <div class="form-group"><label>สถานะ</label>
+        <select id="f-status"><option>คุณภาพสูง</option><option>มีคุณภาพ</option><option>ยังไม่มีคุณภาพ</option><option>แสปม</option></select>
+      </div>
+      <div class="form-group"><label>วันที่</label><input id="f-date" type="date"></div>
+      <div class="form-group full"><label>หมายเหตุ</label><textarea id="f-note" placeholder="บันทึกเพิ่มเติม..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" style="background:#f1f5f9" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveLead()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="overlay" id="confirmModal">
+  <div class="modal">
+    <h3>🗑️ ลบ Lead</h3>
+    <p>ต้องการลบ Lead นี้ใช่ไหม?</p>
+    <div class="modal-footer" style="justify-content:center">
+      <button class="btn" style="background:#f1f5f9" onclick="closeConfirm()">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">ลบเลย</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────
+const STORE_KEY = 'arthome_leads_v1';
+let leads = [];
+let editId = null;
+let deleteId = null;
+
+// ─── SAMPLE DATA ─────────────────────────
+const SAMPLE = [
+  {id:1,name:'สมชาย ใจดี',phone:'081-234-5678',line:'somchai01',source:'Facebook',project:'บ้านเดี่ยว EEC',zone:'ภาคตะวันออก',budget:'3,500,000',status:'คุณภาพสูง',date:'2026-04-10',note:'นัดดูบ้านแล้ว'},
+  {id:2,name:'สมหญิง รักษ์ดี',phone:'089-111-2222',line:'somying_r',source:'Facebook',project:'ทาวน์โฮม บางนา',zone:'ภาคกลาง',budget:'2,200,000',status:'มีคุณภาพ',date:'2026-04-12',note:''},
+  {id:3,name:'วิชัย แสงทอง',phone:'086-555-7777',line:'',source:'Line',project:'คอนโด นครสวรรค์',zone:'นครสวรรค์',budget:'1,800,000',status:'มีคุณภาพ',date:'2026-04-15',note:'สนใจยูนิตชั้น 5'},
+  {id:4,name:'นภา สวยงาม',phone:'083-999-8888',line:'napa99',source:'Facebook',project:'บ้านเดี่ยว ชลบุรี',zone:'ภาคตะวันออก',budget:'4,000,000',status:'คุณภาพสูง',date:'2026-04-18',note:'โอนได้เร็ว'},
+  {id:5,name:'ทดสอบ สแปม',phone:'000-000-0000',line:'',source:'Facebook',project:'',zone:'ภาคกลาง',budget:'',status:'แสปม',date:'2026-04-20',note:''},
+  {id:6,name:'ปิยะ มั่นคง',phone:'085-432-1098',line:'piya_m',source:'Facebook',project:'บ้านเดี่ยว ระยอง',zone:'ภาคตะวันออก',budget:'2,800,000',status:'ยังไม่มีคุณภาพ',date:'2026-05-01',note:'ติดต่อยาก'},
+  {id:7,name:'อารีย์ สุขสันต์',phone:'082-777-3333',line:'aree_s',source:'Facebook',project:'ทาวน์โฮม นนทบุรี',zone:'ภาคกลาง',budget:'2,500,000',status:'มีคุณภาพ',date:'2026-05-03',note:''},
+  {id:8,name:'ธนาคาร ใจกว้าง',phone:'087-654-3210',line:'thanakan',source:'Referral',project:'คอนโด นครสวรรค์',zone:'นครสวรรค์',budget:'1,500,000',status:'คุณภาพสูง',date:'2026-05-05',note:'แนะนำมาจากลูกค้าเก่า'},
+  {id:9,name:'กนกวรรณ ดวงดี',phone:'084-111-9999',line:'kanok_d',source:'Website',project:'บ้านเดี่ยว ปทุม',zone:'ภาคกลาง',budget:'3,200,000',status:'ยังไม่มีคุณภาพ',date:'2026-05-07',note:''},
+  {id:10,name:'สุรชัย แข็งแกร่ง',phone:'080-222-4444',line:'',source:'TikTok',project:'บ้านเดี่ยว ชลบุรี',zone:'ภาคตะวันออก',budget:'5,000,000',status:'คุณภาพสูง',date:'2026-05-10',note:'งบสูง สนใจมาก'},
+];
+
+// ─── STORAGE ─────────────────────────────
+function save(){
+  try{ window.storage?.set(STORE_KEY, JSON.stringify(leads)); }catch(e){}
+  localStorage_safe_set(STORE_KEY, JSON.stringify(leads));
+}
+function localStorage_safe_set(k,v){try{Object.defineProperty(window,'_ls',{value:v,writable:true});window._leads_mem=v;}catch(e){}}
+function load(){
+  try{
+    const raw = window._leads_mem;
+    if(raw){ leads = JSON.parse(raw); return; }
+  }catch(e){}
+  leads = [...SAMPLE];
+}
+
+// ─── INIT ─────────────────────────────────
+window.addEventListener('DOMContentLoaded',async()=>{
+  try{
+    const r = await window.storage?.get(STORE_KEY);
+    if(r?.value){ leads = JSON.parse(r.value); }
+    else { leads = [...SAMPLE]; }
+  }catch(e){ leads = [...SAMPLE]; }
+  renderAll();
+  // listen filters
+  document.getElementById('search-all').addEventListener('input',renderTableAll);
+  document.getElementById('filter-status').addEventListener('change',renderTableAll);
+  document.getElementById('filter-zone').addEventListener('change',renderTableAll);
+  // default date
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+});
+
+// ─── NAVIGATION ──────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  renderAll();
+}
+
+// ─── RENDER ALL ──────────────────────────
+function renderAll(){
+  renderStats('all', leads);
+  renderTableAll();
+  renderStats('east', leads.filter(l=>l.zone==='ภาคตะวันออก'));
+  renderTableZone('east','ภาคตะวันออก');
+  renderStats('central', leads.filter(l=>l.zone==='ภาคกลาง'));
+  renderTableZone('central','ภาคกลาง');
+  renderStats('nakhon', leads.filter(l=>l.zone==='นครสวรรค์'));
+  renderTableZone('nakhon','นครสวรรค์');
+  renderDash();
+  renderMonthly();
+}
+
+// ─── STATS ───────────────────────────────
+function renderStats(id, data){
+  const total = data.length;
+  const high = data.filter(l=>l.status==='คุณภาพสูง').length;
+  const med = data.filter(l=>l.status==='มีคุณภาพ').length;
+  const low = data.filter(l=>l.status==='ยังไม่มีคุณภาพ').length;
+  const spam = data.filter(l=>l.status==='แสปม').length;
+  const pct = v => total?Math.round(v/total*100):0;
+  document.getElementById('stats-'+id).innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Leads ทั้งหมด</div></div>
+    <div class="stat-card high"><div class="stat-num" style="color:#7c3aed">${high}</div><div class="stat-label">คุณภาพสูง</div><div class="stat-pct">${pct(high)}% ของทั้งหมด</div></div>
+    <div class="stat-card medium"><div class="stat-num" style="color:#0e9f6e">${med}</div><div class="stat-label">มีคุณภาพ</div><div class="stat-pct">${pct(med)}%</div></div>
+    <div class="stat-card low"><div class="stat-num" style="color:#f59e0b">${low}</div><div class="stat-label">ยังไม่มีคุณภาพ</div><div class="stat-pct">${pct(low)}%</div></div>
+    <div class="stat-card spam"><div class="stat-num" style="color:#e02424">${spam}</div><div class="stat-label">แสปม</div><div class="stat-pct">${pct(spam)}%</div></div>
+  `;
+}
+
+// ─── STATUS BADGE ────────────────────────
+function badge(s){
+  const m={คุณภาพสูง:'high',มีคุณภาพ:'medium',ยังไม่มีคุณภาพ:'low',แสปม:'spam'};
+  return `<span class="badge badge-${m[s]||'low'}">${s}</span>`;
+}
+
+// ─── TABLE ALL ───────────────────────────
+function renderTableAll(){
+  const q = document.getElementById('search-all').value.toLowerCase();
+  const st = document.getElementById('filter-status').value;
+  const zn = document.getElementById('filter-zone').value;
+  let data = leads.filter(l=>{
+    const match = !q || l.name.toLowerCase().includes(q)||l.phone.includes(q)||(l.line||'').toLowerCase().includes(q);
+    const matchS = !st || l.status===st;
+    const matchZ = !zn || l.zone===zn;
+    return match&&matchS&&matchZ;
+  });
+  renderTable('tbody-all', data, true);
+}
+
+function renderTableZone(id, zone){
+  renderTable('tbody-'+id, leads.filter(l=>l.zone===zone), false);
+}
+
+function renderTable(tbodyId, data, showZone){
+  const tb = document.getElementById(tbodyId);
+  if(!data.length){tb.innerHTML=`<tr><td colspan="11" class="empty">ไม่มีข้อมูล</td></tr>`;return;}
+  tb.innerHTML = data.map((l,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${l.name}</strong></td>
+      <td>${l.phone}</td>
+      <td>${l.line||'-'}</td>
+      <td>${l.project||'-'}</td>
+      ${showZone?`<td><span class="badge badge-zone">${l.zone}</span></td>`:''}
+      <td>${l.budget||'-'}</td>
+      <td>${badge(l.status)}</td>
+      <td>${l.date||'-'}</td>
+      <td style="max-width:120px;font-size:11px;color:#6b7280">${l.note||''}</td>
+      <td>
+        <button class="btn btn-edit btn-sm" onclick="openEdit(${l.id})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="openDelete(${l.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ─── DASHBOARD ───────────────────────────
+function renderDash(){
+  renderStats('dash', leads);
+  // Status chart
+  const statuses = ['คุณภาพสูง','มีคุณภาพ','ยังไม่มีคุณภาพ','แสปม'];
+  const colors = ['#7c3aed','#0e9f6e','#f59e0b','#e02424'];
+  const max = Math.max(1,...statuses.map(s=>leads.filter(l=>l.status===s).length));
+  document.getElementById('chart-status').innerHTML = statuses.map((s,i)=>{
+    const c = leads.filter(l=>l.status===s).length;
+    return `<div class="bar-item"><div class="bar-label">${s}</div><div class="bar-track"><div class="bar-fill" style="width:${c/max*100}%;background:${colors[i]}"></div></div><div class="bar-val">${c}</div></div>`;
+  }).join('');
+  // Zone chart
+  const zones = ['ภาคตะวันออก','ภาคกลาง','นครสวรรค์'];
+  const zmax = Math.max(1,...zones.map(z=>leads.filter(l=>l.zone===z).length));
+  document.getElementById('chart-zone').innerHTML = zones.map(z=>{
+    const c = leads.filter(l=>l.zone===z).length;
+    return `<div class="bar-item"><div class="bar-label">${z}</div><div class="bar-track"><div class="bar-fill" style="width:${c/zmax*100}%;background:#1a56db"></div></div><div class="bar-val">${c}</div></div>`;
+  }).join('');
+  // Monthly chart (last 6)
+  const months = getLast6Months();
+  const mmax = Math.max(1,...months.map(m=>countMonth(m.key)));
+  document.getElementById('chart-monthly').innerHTML = months.map(m=>{
+    const c = countMonth(m.key);
+    return `<div class="bar-item"><div class="bar-label">${m.label}</div><div class="bar-track"><div class="bar-fill" style="width:${c/mmax*100}%;background:#0891b2"></div></div><div class="bar-val">${c}</div></div>`;
+  }).join('');
+  // Source chart
+  const sources = [...new Set(leads.map(l=>l.source||'ไม่ระบุ'))];
+  const smax = Math.max(1,...sources.map(s=>leads.filter(l=>l.source===s).length));
+  document.getElementById('chart-source').innerHTML = sources.map(s=>{
+    const c = leads.filter(l=>l.source===s).length;
+    return `<div class="bar-item"><div class="bar-label">${s}</div><div class="bar-track"><div class="bar-fill" style="width:${c/smax*100}%;background:#7c3aed"></div></div><div class="bar-val">${c}</div></div>`;
+  }).join('');
+}
+
+function getLast6Months(){
+  const res=[];
+  const now = new Date();
+  for(let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const label = d.toLocaleDateString('th-TH',{month:'short',year:'2-digit'});
+    res.push({key,label});
+  }
+  return res;
+}
+function countMonth(key){ return leads.filter(l=>(l.date||'').startsWith(key)).length; }
+
+// ─── MONTHLY ─────────────────────────────
+function renderMonthly(){
+  const months = getLast6Months();
+  const statuses = ['คุณภาพสูง','มีคุณภาพ','ยังไม่มีคุณภาพ','แสปม'];
+  let html = `<h4 style="margin-bottom:16px">📅 สรุป Leads รายเดือน</h4>
+  <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+  <thead><tr style="background:#f8fafc">
+    <th style="padding:10px;text-align:left;border-bottom:2px solid #e2e8f0">เดือน</th>
+    <th style="padding:10px;text-align:center;border-bottom:2px solid #e2e8f0">รวม</th>
+    ${statuses.map(s=>`<th style="padding:10px;text-align:center;border-bottom:2px solid #e2e8f0">${s}</th>`).join('')}
+  </tr></thead><tbody>`;
+  let totals = {total:0};
+  statuses.forEach(s=>totals[s]=0);
+  months.forEach(m=>{
+    const mLeads = leads.filter(l=>(l.date||'').startsWith(m.key));
+    const total = mLeads.length;
+    totals.total += total;
+    html += `<tr style="border-bottom:1px solid #e2e8f0">
+      <td style="padding:10px;font-weight:600">${m.label}</td>
+      <td style="padding:10px;text-align:center;font-weight:700">${total}</td>`;
+    statuses.forEach(s=>{
+      const c = mLeads.filter(l=>l.status===s).length;
+      totals[s]+=c;
+      html+=`<td style="padding:10px;text-align:center">${c||'-'}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+=`<tr style="background:#f8fafc;font-weight:700">
+    <td style="padding:10px">รวมทั้งหมด</td>
+    <td style="padding:10px;text-align:center">${totals.total}</td>
+    ${statuses.map(s=>`<td style="padding:10px;text-align:center">${totals[s]||'-'}</td>`).join('')}
+  </tr></tbody></table></div>`;
+  document.getElementById('monthly-content').innerHTML = html;
+}
+
+// ─── MODAL ───────────────────────────────
+function openAdd(){
+  editId=null;
+  document.getElementById('modalTitle').textContent='➕ เพิ่ม Lead ใหม่';
+  clearForm();
+  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function openEdit(id){
+  const l = leads.find(x=>x.id===id); if(!l)return;
+  editId=id;
+  document.getElementById('modalTitle').textContent='✏️ แก้ไข Lead';
+  document.getElementById('f-name').value=l.name;
+  document.getElementById('f-phone').value=l.phone;
+  document.getElementById('f-line').value=l.line||'';
+  document.getElementById('f-source').value=l.source||'Facebook';
+  document.getElementById('f-project').value=l.project||'';
+  document.getElementById('f-zone').value=l.zone;
+  document.getElementById('f-budget').value=l.budget||'';
+  document.getElementById('f-status').value=l.status;
+  document.getElementById('f-date').value=l.date||'';
+  document.getElementById('f-note').value=l.note||'';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); }
+function clearForm(){
+  ['f-name','f-phone','f-line','f-project','f-budget','f-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-source').value='Facebook';
+  document.getElementById('f-zone').value='ภาคตะวันออก';
+  document.getElementById('f-status').value='ยังไม่มีคุณภาพ';
+}
+function saveLead(){
+  const name=document.getElementById('f-name').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  if(!name||!phone){alert('กรุณากรอกชื่อและเบอร์โทร');return;}
+  const obj={
+    id: editId || (Math.max(0,...leads.map(l=>l.id))+1),
+    name, phone,
+    line:document.getElementById('f-line').value.trim(),
+    source:document.getElementById('f-source').value,
+    project:document.getElementById('f-project').value.trim(),
+    zone:document.getElementById('f-zone').value,
+    budget:document.getElementById('f-budget').value.trim(),
+    status:document.getElementById('f-status').value,
+    date:document.getElementById('f-date').value,
+    note:document.getElementById('f-note').value.trim()
+  };
+  if(editId){ leads = leads.map(l=>l.id===editId?obj:l); }
+  else { leads.push(obj); }
+  save(); closeModal(); renderAll();
+}
+
+// ─── DELETE ──────────────────────────────
+function openDelete(id){ deleteId=id; document.getElementById('confirmModal').classList.add('open'); }
+function closeConfirm(){ document.getElementById('confirmModal').classList.remove('open'); }
+function confirmDelete(){
+  leads = leads.filter(l=>l.id!==deleteId);
+  save(); closeConfirm(); renderAll();
+}
+
+// close modal on overlay click
+document.getElementById('modalOverlay').addEventListener('click',function(e){ if(e.target===this)closeModal(); });
+document.getElementById('confirmModal').addEventListener('click',function(e){ if(e.target===this)closeConfirm(); });
+</script>
+</body>
+</html>
