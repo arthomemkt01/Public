@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ArtHome - Lead Management</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f4f8;color:#2d3748;min-height:100vh}
+:root{--primary:#1a3a6b;--primary2:#1a56db;--border:#e2e8f0;--card:#fff}
+.topbar{background:linear-gradient(135deg,#1a3a6b,#1a56db);padding:0 20px;display:flex;align-items:center;gap:12px;height:56px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.logo{color:#fff;font-size:20px;font-weight:700}.logo span{color:#93c5fd}
+.updated{color:rgba(255,255,255,.6);font-size:11px;margin-left:4px}
+nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap;align-items:center}
+nav button{background:rgba(255,255,255,.15);color:#fff;border:none;padding:8px 13px;border-radius:8px;cursor:pointer;font-size:12px;transition:.2s;white-space:nowrap}
+nav button:hover,nav button.active{background:rgba(255,255,255,.3);font-weight:600}
+.btn-refresh{background:rgba(255,255,255,.2)!important;border:1px solid rgba(255,255,255,.4)!important;font-weight:600!important}
+.spinning{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+main{padding:20px;max-width:1400px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-top:4px solid #ccc;text-align:center}
+.stat-card.total{border-color:var(--primary2)}.stat-card.hot{border-color:#e02424}.stat-card.warm{border-color:#f59e0b}.stat-card.cold{border-color:#94a3b8}.stat-card.spam2{border-color:#6b7280}
+.stat-num{font-size:32px;font-weight:800;line-height:1}
+.stat-card.total .stat-num{color:var(--primary2)}.stat-card.hot .stat-num{color:#e02424}.stat-card.warm .stat-num{color:#d97706}.stat-card.cold .stat-num{color:#475569}.stat-card.spam2 .stat-num{color:#6b7280}
+.stat-label{font-size:12px;color:#6b7280;margin-top:4px;font-weight:500}
+.stat-pct{font-size:11px;color:#9ca3af;margin-top:2px}
+.toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.toolbar input,.toolbar select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;outline:none}
+.toolbar input{flex:1;min-width:200px}
+.btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--primary2);color:#fff}
+.table-wrap{background:var(--card);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#1a3a6b;color:#fff;padding:11px 10px;text-align:left;white-space:nowrap;font-weight:500}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:hover{background:#f0f7ff}
+tbody td{padding:9px 10px;vertical-align:middle}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge-hot{background:#fee2e2;color:#991b1b}.badge-warm{background:#fef3c7;color:#92400e}.badge-cold{background:#f1f5f9;color:#475569}.badge-spam{background:#f3f4f6;color:#6b7280}
+.badge-zone{background:#dbeafe;color:#1e40af;font-size:11px}
+.chart-section{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.chart-card{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.chart-card h4{font-size:13px;font-weight:700;color:#374151;margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.bar-item{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-label{width:130px;text-align:right;font-size:12px;flex-shrink:0;color:#374151}
+.bar-track{flex:1;background:#f1f5f9;border-radius:20px;height:22px;overflow:hidden}
+.bar-fill{height:100%;border-radius:20px;transition:.6s;display:flex;align-items:center;padding-left:8px;color:#fff;font-size:11px;font-weight:600;min-width:4px}
+.bar-val{width:32px;font-weight:700;font-size:12px;color:#374151}
+.zone-summary{background:var(--card);border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:auto;margin-bottom:20px}
+.zone-summary table thead th{background:#1a3a6b;color:#fff;padding:11px 14px}
+.zone-summary table tbody td{padding:12px 14px;font-size:13px}
+.zone-row-east{background:#f0fdf4}.zone-row-central{background:#eff6ff}.zone-row-nakhon{background:#faf5ff}
+.page-title{font-size:19px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;color:#1a3a6b;flex-wrap:wrap;justify-content:space-between}
+.empty{text-align:center;padding:40px;color:#9ca3af;font-size:14px}
+.month-wrap{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.pagination{display:flex;gap:6px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.pagination button{padding:6px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px;background:#fff}
+.pagination button.active{background:var(--primary2);color:#fff;border-color:var(--primary2)}
+.load-overlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,.8);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.load-overlay.show{display:flex}
+.spinner{width:48px;height:48px;border:5px solid #dbeafe;border-top-color:#1a56db;border-radius:50%;animation:spin 0.8s linear infinite}
+.load-text{font-size:14px;color:#1a3a6b;font-weight:600}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;width:90%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:16px;color:var(--primary)}
+#loginError{display:none;color:#e02424;font-size:12px;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">🏠 Art<span>Home</span></div>
+  <span class="updated" id="last-updated">ยังไม่ได้โหลด</span>
+  <nav>
+    <button class="active" onclick="showPage('dash',this)">📊 Dashboard</button>
+    <span id="admin-nav" hidden>
+      <button onclick="showPage('all',this)">📋 ทั้งหมด</button>
+      <button onclick="showPage('monthly',this)">📅 รายเดือน</button>
+      <button onclick="showPage('east',this)">🏠 ตะวันออก</button>
+      <button onclick="showPage('central',this)">🏠 ภาคกลาง</button>
+      <button onclick="showPage('nakhon',this)">🏠 นครสวรรค์</button>
+    </span>
+    <button id="refresh-btn" class="btn-refresh" onclick="refreshData()">🔄 Refresh</button>
+    <button id="admin-toggle" onclick="toggleAdmin()" style="background:rgba(255,255,255,.08);font-size:16px;padding:6px 10px">⚙️</button>
+  </nav>
+</div>
+
+<div class="load-overlay" id="loadOverlay">
+  <div class="spinner"></div>
+  <div class="load-text">กำลังโหลดข้อมูลจาก Google Sheets...</div>
+</div>
+
+<main>
+  <div id="page-dash" class="page active">
+    <div class="page-title">
+      <span>📊 Dashboard — สรุป Leads รับสร้างบ้าน Art-Home 2026</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:13px;color:#6b7280;font-weight:500">📅 กรองเดือน:</label>
+        <select id="dash-month-filter" style="padding:7px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;background:#fff;outline:none">
+          <option value="">ทั้งหมด</option>
+        </select>
+      </div>
+    </div>
+    <div class="stats-row" id="stats-dash"></div>
+    <div class="zone-summary">
+      <table><thead><tr><th>เพจ/ภาค</th><th>Leads ทั้งหมด</th><th>⭐ คุณภาพสูง</th><th>%</th><th>👍 คุณภาพ</th><th>%</th><th>👎 ยังไม่มีคุณภาพ</th><th>%</th></tr></thead>
+      <tbody id="zone-table"></tbody></table>
+    </div>
+    <div class="chart-section">
+      <div class="chart-card"><h4>📊 สถานะ Leads</h4><div id="chart-status"></div></div>
+      <div class="chart-card"><h4>🗺️ Leads ตามภาค</h4><div id="chart-zone"></div></div>
+      <div class="chart-card"><h4>📅 Leads รายเดือน</h4><div id="chart-monthly"></div></div>
+      <div class="chart-card"><h4>📱 แหล่งที่มา</h4><div id="chart-source"></div></div>
+    </div>
+  </div>
+
+  <div id="page-all" class="page">
+    <div class="page-title">📋 Leads ทั้งหมด</div>
+    <div class="stats-row" id="stats-all"></div>
+    <div class="toolbar">
+      <input id="search-all" type="text" placeholder="🔍 ค้นหาชื่อ, เบอร์...">
+      <select id="filter-status"><option value="">สถานะทั้งหมด</option><option value="Hot">⭐ คุณภาพสูง</option><option value="Warm">👍 คุณภาพ</option><option value="Cold">👎 ยังไม่ค่อยมีคุณภาพ</option><option value="Spam">🚫 Spam</option></select>
+      <select id="filter-zone"><option value="">ภาคทั้งหมด</option><option>ภาคตะวันออก</option><option>ภาคกลาง</option><option>นครสวรรค์</option></select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>ชื่อลูกค้า</th><th>เบอร์โทร</th><th>Facebook</th><th>แบบบ้าน</th><th>ภาค</th><th>คุณภาพ</th><th>วันที่</th><th>หมายเหตุ</th></tr></thead><tbody id="tbody-all"></tbody></table></div>
+    <div class="pagination" id="pag-all"></div>
+  </div>
+
+  <div id="page-monthly" class="page">
+    <div class="page-title">📅 สรุปรายเดือน</div>
+    <div class="month-wrap" id="monthly-content"></div>
+  </div>
+
+  <div id="page-east" class="page">
+    <div class="page-title">🏠 ภาคตะวันออก</div>
+    <div class="stats-row" id="stats-east"></div>
+    <div class="toolbar"><input id="search-east" type="text" placeholder="🔍 ค้นหา..."><select id="filter-status-east"><option value="">สถานะทั้งหมด</option><option value="Hot">⭐ คุณภาพสูง</option><option value="Warm">👍 คุณภาพ</option><option value="Cold">👎 ยังไม่ค่อยมีคุณภาพ</option><option value="Spam">🚫 Spam</option></select></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>ชื่อลูกค้า</th><th>เบอร์โทร</th><th>Facebook</th><th>แบบบ้าน</th><th>คุณภาพ</th><th>วันที่</th><th>หมายเหตุ</th></tr></thead><tbody id="tbody-east"></tbody></table></div>
+    <div class="pagination" id="pag-east"></div>
+  </div>
+
+  <div id="page-central" class="page">
+    <div class="page-title">🏠 ภาคกลาง</div>
+    <div class="stats-row" id="stats-central"></div>
+    <div class="toolbar"><input id="search-central" type="text" placeholder="🔍 ค้นหา..."><select id="filter-status-central"><option value="">สถานะทั้งหมด</option><option value="Hot">⭐ คุณภาพสูง</option><option value="Warm">👍 คุณภาพ</option><option value="Cold">👎 ยังไม่ค่อยมีคุณภาพ</option><option value="Spam">🚫 Spam</option></select></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>ชื่อลูกค้า</th><th>เบอร์โทร</th><th>Facebook</th><th>แบบบ้าน</th><th>คุณภาพ</th><th>วันที่</th><th>หมายเหตุ</th></tr></thead><tbody id="tbody-central"></tbody></table></div>
+    <div class="pagination" id="pag-central"></div>
+  </div>
+
+  <div id="page-nakhon" class="page">
+    <div class="page-title">🏠 นครสวรรค์</div>
+    <div class="stats-row" id="stats-nakhon"></div>
+    <div class="toolbar"><input id="search-nakhon" type="text" placeholder="🔍 ค้นหา..."><select id="filter-status-nakhon"><option value="">สถานะทั้งหมด</option><option value="Hot">⭐ คุณภาพสูง</option><option value="Warm">👍 คุณภาพ</option><option value="Cold">👎 ยังไม่ค่อยมีคุณภาพ</option><option value="Spam">🚫 Spam</option></select></div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>ชื่อลูกค้า</th><th>เบอร์โทร</th><th>Facebook</th><th>แบบบ้าน</th><th>คุณภาพ</th><th>วันที่</th><th>หมายเหตุ</th></tr></thead><tbody id="tbody-nakhon"></tbody></table></div>
+    <div class="pagination" id="pag-nakhon"></div>
+  </div>
+</main>
+
+<div class="overlay" id="loginOverlay">
+  <div class="modal">
+    <h3>🔐 Admin Login</h3>
+    <p style="margin:12px 0 16px;color:#6b7280;font-size:13px">กรอกรหัสผ่านเพื่อเข้าโหมด Admin</p>
+    <input id="loginInput" type="password" placeholder="รหัสผ่าน" style="width:100%;padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;text-align:center" onkeydown="if(event.key==='Enter')submitLogin()">
+    <p id="loginError">รหัสผ่านไม่ถูกต้อง</p>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+      <button class="btn" style="background:#f1f5f9" onclick="closeLogin()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="submitLogin()">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const GAS_URL='https://script.google.com/macros/s/AKfycbzhpSfQxU9la2jg4qRKGQsW4tzuLxAvvb11thM0hiagQ91IegbFWl2iYq_VJn7e0faU/exec';
+const ADMIN_PASS='arthome2026';
+let leads=[];
+let adminMode=false;
+const PAGE_SIZE=20;
+let pages={all:1,east:1,central:1,nakhon:1};
+
+async function fetchLeads(){
+  const r=await fetch(GAS_URL+'?action=getAll');
+  return r.json();
+}
+
+async function refreshData(){
+  const btn=document.getElementById('refresh-btn');
+  btn.classList.add('spinning'); btn.disabled=true;
+  document.getElementById('loadOverlay').classList.add('show');
+  try{
+    const res=await fetchLeads();
+    if(res.leads){
+      leads=res.leads;
+      const now=new Date();
+      document.getElementById('last-updated').textContent='อัปเดต: '+now.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+      renderAll();
+    } else { alert('ไม่สามารถดึงข้อมูลได้: '+(res.error||'unknown')); }
+  }catch(e){ alert('Error: '+e.message); }
+  btn.classList.remove('spinning'); btn.disabled=false;
+  document.getElementById('loadOverlay').classList.remove('show');
+}
+
+window.addEventListener('DOMContentLoaded',async()=>{
+  document.getElementById('dash-month-filter').addEventListener('change',renderDash);
+  ['search-all','filter-status','filter-zone'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{pages.all=1;renderTableAll();}));
+  ['search-east','filter-status-east'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{pages.east=1;renderTableZone('east','ภาคตะวันออก');}));
+  ['search-central','filter-status-central'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{pages.central=1;renderTableZone('central','ภาคกลาง');}));
+  ['search-nakhon','filter-status-nakhon'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{pages.nakhon=1;renderTableZone('nakhon','นครสวรรค์');}));
+  await refreshData();
+});
+
+function toggleAdmin(){
+  if(adminMode){
+    adminMode=false;
+    document.getElementById('admin-nav').hidden=true;
+    const btn=document.getElementById('admin-toggle');
+    btn.style.background='rgba(255,255,255,.08)'; btn.textContent='⚙️';
+    showPage('dash',document.querySelector('nav button'));
+  } else {
+    document.getElementById('loginOverlay').classList.add('open');
+    document.getElementById('loginInput').value='';
+    document.getElementById('loginError').style.display='none';
+    setTimeout(()=>document.getElementById('loginInput').focus(),100);
+  }
+}
+function submitLogin(){
+  if(document.getElementById('loginInput').value===ADMIN_PASS){
+    adminMode=true;
+    document.getElementById('loginOverlay').classList.remove('open');
+    document.getElementById('admin-nav').hidden=false;
+    const btn=document.getElementById('admin-toggle');
+    btn.style.background='rgba(255,200,0,.35)'; btn.textContent='🔓';
+  } else {
+    document.getElementById('loginError').style.display='block';
+    document.getElementById('loginInput').value='';
+  }
+}
+function closeLogin(){document.getElementById('loginOverlay').classList.remove('open');}
+document.getElementById('loginOverlay').addEventListener('click',function(e){if(e.target===this)closeLogin();});
+
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  renderAll();
+}
+
+function renderAll(){
+  renderDash();
+  renderStats('all',leads); renderTableAll();
+  const east=leads.filter(l=>l.zone==='ภาคตะวันออก');
+  const central=leads.filter(l=>l.zone==='ภาคกลาง');
+  const nakhon=leads.filter(l=>l.zone==='นครสวรรค์');
+  renderStats('east',east); renderTableZone('east','ภาคตะวันออก');
+  renderStats('central',central); renderTableZone('central','ภาคกลาง');
+  renderStats('nakhon',nakhon); renderTableZone('nakhon','นครสวรรค์');
+  renderMonthly();
+}
+
+function renderStats(id,data){
+  const el=document.getElementById('stats-'+id); if(!el)return;
+  const tot=data.length,hot=data.filter(l=>l.status==='Hot').length;
+  const warm=data.filter(l=>l.status==='Warm').length,cold=data.filter(l=>l.status==='Cold').length;
+  const spam=data.filter(l=>l.status==='Spam').length;
+  const pct=v=>tot?Math.round(v/tot*100):0;
+  el.innerHTML=`
+    <div class="stat-card total"><div class="stat-num">${tot}</div><div class="stat-label">Leads ทั้งหมด</div></div>
+    <div class="stat-card hot"><div class="stat-num">${hot}</div><div class="stat-label">⭐ Leads คุณภาพสูง</div><div class="stat-pct">${pct(hot)}%</div></div>
+    <div class="stat-card warm"><div class="stat-num">${warm}</div><div class="stat-label">👍 Leads คุณภาพ</div><div class="stat-pct">${pct(warm)}%</div></div>
+    <div class="stat-card cold"><div class="stat-num">${cold}</div><div class="stat-label">👎 Leads ยังไม่ค่อยมีคุณภาพ</div><div class="stat-pct">${pct(cold)}%</div></div>
+    <div class="stat-card spam2"><div class="stat-num">${spam}</div><div class="stat-label">🚫 Spam</div><div class="stat-pct">${pct(spam)}%</div></div>`;
+}
+
+function badge(s){
+  const m={Hot:'hot',Warm:'warm',Cold:'cold',Spam:'spam'};
+  const lbl={Hot:'⭐ คุณภาพสูง',Warm:'👍 คุณภาพ',Cold:'👎 ยังไม่มีคุณภาพ',Spam:'🚫 Spam'};
+  return `<span class="badge badge-${m[s]||'cold'}">${lbl[s]||s}</span>`;
+}
+
+function filterData(data,searchId,statusId,zoneId){
+  const q=(document.getElementById(searchId)?.value||'').toLowerCase();
+  const st=document.getElementById(statusId)?.value||'';
+  const zn=zoneId?(document.getElementById(zoneId)?.value||''):'';
+  return data.filter(l=>{
+    const mq=!q||(l.name||'').toLowerCase().includes(q)||(l.phone||'').includes(q)||(l.line||'').toLowerCase().includes(q);
+    return mq&&(!st||l.status===st)&&(!zn||l.zone===zn);
+  });
+}
+
+function renderTableAll(){
+  const data=filterData(leads,'search-all','filter-status','filter-zone');
+  renderTable('tbody-all','pag-all',data,true,'all');
+}
+function renderTableZone(id,zone){
+  const data=filterData(leads.filter(l=>l.zone===zone),`search-${id}`,`filter-status-${id}`,null);
+  renderTable(`tbody-${id}`,`pag-${id}`,data,false,id);
+}
+function renderTable(tbodyId,pagId,data,showZone,pgKey){
+  const pg=pages[pgKey]||1,total=data.length,maxPg=Math.ceil(total/PAGE_SIZE)||1;
+  if(pg>maxPg) pages[pgKey]=maxPg;
+  const curPg=pages[pgKey]||1;
+  const slice=data.slice((curPg-1)*PAGE_SIZE,curPg*PAGE_SIZE);
+  const tb=document.getElementById(tbodyId); if(!tb)return;
+  if(!slice.length){tb.innerHTML=`<tr><td colspan="10" class="empty">ไม่มีข้อมูล</td></tr>`;}
+  else tb.innerHTML=slice.map((l,i)=>`<tr>
+    <td>${(curPg-1)*PAGE_SIZE+i+1}</td>
+    <td><strong>${l.name||''}</strong></td>
+    <td>${l.phone||'-'}</td>
+    <td style="font-size:11px;color:#6b7280">${l.line||'-'}</td>
+    <td>${l.project||'-'}</td>
+    ${showZone?`<td><span class="badge badge-zone">${l.zone||''}</span></td>`:''}
+    <td>${badge(l.status)}</td>
+    <td>${l.date||'-'}</td>
+    <td style="max-width:150px;font-size:11px;color:#6b7280">${l.note||''}</td>
+  </tr>`).join('');
+  const pag=document.getElementById(pagId); if(!pag)return;
+  if(maxPg<=1){pag.innerHTML='';return;}
+  let h=`<span style="font-size:12px;color:#6b7280">หน้า ${curPg}/${maxPg} (${total} รายการ)</span>`;
+  h+=`<button onclick="goPage('${pgKey}',1)" ${curPg===1?'disabled':''}>«</button>`;
+  h+=`<button onclick="goPage('${pgKey}',${curPg-1})" ${curPg===1?'disabled':''}>‹</button>`;
+  for(let p=Math.max(1,curPg-2);p<=Math.min(maxPg,curPg+2);p++)
+    h+=`<button class="${p===curPg?'active':''}" onclick="goPage('${pgKey}',${p})">${p}</button>`;
+  h+=`<button onclick="goPage('${pgKey}',${curPg+1})" ${curPg===maxPg?'disabled':''}>›</button>`;
+  h+=`<button onclick="goPage('${pgKey}',${maxPg})" ${curPg===maxPg?'disabled':''}>»</button>`;
+  pag.innerHTML=h;
+}
+function goPage(key,p){
+  pages[key]=p;
+  if(key==='all') renderTableAll();
+  else if(key==='east') renderTableZone('east','ภาคตะวันออก');
+  else if(key==='central') renderTableZone('central','ภาคกลาง');
+  else if(key==='nakhon') renderTableZone('nakhon','นครสวรรค์');
+}
+
+function pad(n){return String(n).padStart(2,'0')}
+function getLast6Months(){
+  const res=[],now=new Date();
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const key=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+    const label=d.toLocaleDateString('th-TH',{month:'short',year:'2-digit'});
+    res.push({key,label});
+  }
+  return res;
+}
+function populateMonthFilter(){
+  const sel=document.getElementById('dash-month-filter');
+  const cur=sel.value;
+  const months=[...new Set(leads.map(l=>(l.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  sel.innerHTML='<option value="">ทั้งหมด</option>';
+  months.forEach(m=>{
+    const [y,mo]=m.split('-');
+    const label=new Date(y,mo-1,1).toLocaleDateString('th-TH',{month:'long',year:'numeric'});
+    sel.innerHTML+=`<option value="${m}" ${m===cur?'selected':''}>${label}</option>`;
+  });
+}
+function getFilteredLeads(){
+  const m=document.getElementById('dash-month-filter')?.value||'';
+  return m?leads.filter(l=>(l.date||'').startsWith(m)):leads;
+}
+function renderDash(){
+  populateMonthFilter();
+  const data=getFilteredLeads();
+  renderStats('dash',data);
+  const zones=[{z:'ภาคตะวันออก',cls:'east'},{z:'ภาคกลาง',cls:'central'},{z:'นครสวรรค์',cls:'nakhon'}];
+  const icons={ภาคตะวันออก:'🟢',ภาคกลาง:'🔵',นครสวรรค์:'🟣'};
+  let rows='';
+  zones.forEach(({z,cls})=>{
+    const d=data.filter(l=>l.zone===z),tot=d.length;
+    const hot=d.filter(l=>l.status==='Hot').length,warm=d.filter(l=>l.status==='Warm').length;
+    const cold=d.filter(l=>l.status!=='Hot'&&l.status!=='Warm').length;
+    const pct=v=>tot?Math.round(v/tot*100):0;
+    rows+=`<tr class="zone-row-${cls}"><td><strong>${icons[z]} ${z}</strong></td>
+      <td style="text-align:center;font-weight:700">${tot}</td>
+      <td style="text-align:center;color:#e02424;font-weight:700">${hot}</td><td style="text-align:center">${pct(hot)}%</td>
+      <td style="text-align:center;color:#d97706;font-weight:700">${warm}</td><td style="text-align:center">${pct(warm)}%</td>
+      <td style="text-align:center;font-weight:700">${cold}</td><td style="text-align:center">${pct(cold)}%</td></tr>`;
+  });
+  const tot=data.length,hotT=data.filter(l=>l.status==='Hot').length;
+  const warmT=data.filter(l=>l.status==='Warm').length,coldT=data.filter(l=>l.status!=='Hot'&&l.status!=='Warm').length;
+  rows+=`<tr style="background:#1a3a6b;color:#fff;font-weight:700"><td>รวมทั้งหมด</td>
+    <td style="text-align:center">${tot}</td>
+    <td style="text-align:center">${hotT}</td><td style="text-align:center">${tot?Math.round(hotT/tot*100):0}%</td>
+    <td style="text-align:center">${warmT}</td><td style="text-align:center">${tot?Math.round(warmT/tot*100):0}%</td>
+    <td style="text-align:center">${coldT}</td><td style="text-align:center">${tot?Math.round(coldT/tot*100):0}%</td></tr>`;
+  document.getElementById('zone-table').innerHTML=rows;
+  const barChart=(elId,items)=>{
+    const max=Math.max(1,...items.map(x=>x.v));
+    document.getElementById(elId).innerHTML=items.map(x=>`
+      <div class="bar-item">
+        <div class="bar-label">${x.label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.max(x.v/max*100,x.v>0?3:0)}%;background:${x.color}">${x.v>0?x.v:''}</div></div>
+        <div class="bar-val">${x.v}</div>
+      </div>`).join('');
+  };
+  barChart('chart-status',[
+    {label:'⭐ คุณภาพสูง',v:data.filter(l=>l.status==='Hot').length,color:'#e02424'},
+    {label:'👍 คุณภาพ',v:data.filter(l=>l.status==='Warm').length,color:'#f59e0b'},
+    {label:'👎 ยังไม่มีคุณภาพ',v:data.filter(l=>l.status==='Cold').length,color:'#64748b'},
+    {label:'🚫 Spam',v:data.filter(l=>l.status==='Spam').length,color:'#9ca3af'},
+  ]);
+  barChart('chart-zone',[
+    {label:'ตะวันออก',v:data.filter(l=>l.zone==='ภาคตะวันออก').length,color:'#0e9f6e'},
+    {label:'ภาคกลาง',v:data.filter(l=>l.zone==='ภาคกลาง').length,color:'#1a56db'},
+    {label:'นครสวรรค์',v:data.filter(l=>l.zone==='นครสวรรค์').length,color:'#7c3aed'},
+  ]);
+  const months=getLast6Months();
+  barChart('chart-monthly',months.map(m=>({label:m.label,v:leads.filter(l=>(l.date||'').startsWith(m.key)).length,color:'#0891b2'})));
+  const srcs=[...new Set(leads.map(l=>l.source||'ไม่ระบุ'))];
+  barChart('chart-source',srcs.map(s=>({label:s,v:data.filter(l=>(l.source||'ไม่ระบุ')===s).length,color:'#7c3aed'})));
+}
+
+function renderMonthly(){
+  const months=getLast6Months();
+  const statuses=['Hot','Warm','Cold','Spam'];
+  const slbls={Hot:'⭐ คุณภาพสูง',Warm:'👍 คุณภาพ',Cold:'👎 ยังไม่มีคุณภาพ',Spam:'🚫 Spam'};
+  let html=`<h4 style="margin-bottom:16px;color:#1a3a6b">📅 สรุป Leads รายเดือน</h4>
+  <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+  <thead><tr style="background:#1a3a6b;color:#fff">
+    <th style="padding:10px 12px;text-align:left">เดือน</th>
+    <th style="padding:10px;text-align:center">รวม</th>
+    ${statuses.map(s=>`<th style="padding:10px;text-align:center">${slbls[s]}</th>`).join('')}
+  </tr></thead><tbody>`;
+  let totals={total:0};statuses.forEach(s=>totals[s]=0);
+  months.forEach((m,i)=>{
+    const md=leads.filter(l=>(l.date||'').startsWith(m.key)),tot=md.length;totals.total+=tot;
+    html+=`<tr style="border-bottom:1px solid #e2e8f0;background:${i%2?'#f8fafc':'#fff'}">
+      <td style="padding:10px 12px;font-weight:600">${m.label}</td>
+      <td style="padding:10px;text-align:center;font-weight:800;font-size:15px">${tot}</td>`;
+    statuses.forEach(s=>{const c=md.filter(l=>l.status===s).length;totals[s]+=c;html+=`<td style="padding:10px;text-align:center">${c||'-'}</td>`;});
+    html+='</tr>';
+  });
+  html+=`<tr style="background:#1a3a6b;color:#fff;font-weight:700">
+    <td style="padding:10px 12px">รวม</td>
+    <td style="padding:10px;text-align:center;font-size:15px">${totals.total}</td>
+    ${statuses.map(s=>`<td style="padding:10px;text-align:center">${totals[s]||'-'}</td>`).join('')}
+  </tr></tbody></table></div>`;
+  const el=document.getElementById('monthly-content');
+  if(el) el.innerHTML=html;
+}
+</script>
+</body>
+</html>
